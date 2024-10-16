@@ -5,19 +5,100 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="index.css">
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background-color: #f0f8ff;
+                padding: 20px;
+            }
+            #weather, #outfit {
+                margin-bottom: 20px;
+            }
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+        </style>
     </head>
     <body>
         <header>
             <h1>SRDKN</h1>
         </header>
         <main>
-            <div id="map"></div>
+            <h1>Outfit Suggestion Based on Annapolis Weather</h1>
+    
+            <div id="weather">
+                <h2>Current Weather:</h2>
+                <p id="weatherData">Fetching weather data...</p>
+            </div>
+        
+            <div id="outfit">
+                <h2>Suggested Outfit:</h2>
+                <p id="outfitText">Awaiting outfit suggestion...</p>
+                <img id="outfitImage" src="" alt="Outfit Image" style="display:none;">
+            </div>
         </main>
         <footer>
             <p>SRDKN</p>
         </footer>
-        <script src="./components/map.js"></script>
+        <!-- <script src="./components/map.js"></script> -->
+        <script>
+            const weatherAPIKey = 'dd0714c003f5f1d123825a96b72c1275';
+            const weatherAPIUrl = `https://api.openweathermap.org/data/2.5/weather?q=Annapolis,USA&APPID=${weatherAPIKey}&units=metric`;
+    
+            // Replace with your OpenAI API key
+            const OPENAI_API_KEY = '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';
+    
+            // Fetch weather data from OpenWeather API
+            async function fetchWeather() {
+                try {
+                    const response = await fetch(weatherAPIUrl);
+                    const data = await response.json();
+                    displayWeather(data);
+                    // Call OpenAI API for outfit suggestion
+                    fetchOutfitSuggestion(data);
+                } catch (error) {
+                    document.getElementById('weatherData').innerText = 'Error fetching weather data.';
+                }
+            }
+    
+            // Display fetched weather data
+            function displayWeather(data) {
+                const weatherText = `City: ${data.name}, Weather: ${data.weather[0].description}, Temperature: ${data.main.temp}°C`;
+                document.getElementById('weatherData').innerText = weatherText;
+            }
+    
+            // Call OpenAI API for outfit suggestion
+            async function fetchOutfitSuggestion(weatherData) {
+                const weatherDescription = `Based on this weather data, suggest an outfit I should wear today and draw a photo-realistic picture of the outfit. The suggestions should be written in one-sentence style: ${weatherData}`;
+                
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini", // or other model
+                        messages: [{role: "user", content: weatherDescription}],
+                        temperature: 0.7
+                    })
+                });
+    
+                const data = await response.json();
+                const outfitSuggestion = data.choices[0].message.content;
+    
+                // Display suggested outfit from OpenAI
+                document.getElementById('outfitText').innerText = outfitSuggestion;
+    
+                // Display a placeholder image for the suggested outfit
+                // const imageUrl = 'https://via.placeholder.com/300'; // Replace with actual logic for image
+                // document.getElementById('outfitImage').src = imageUrl;
+                // document.getElementById('outfitImage').style.display = 'block';
+            }
+    
+            // Initialize app by fetching the weather
+            fetchWeather();
+        </script>
     </body>
 </html>
